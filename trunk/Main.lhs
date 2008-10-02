@@ -41,6 +41,7 @@ The front end for the automated theorem proving Haskell port.
 > import qualified Decidable
 > import qualified Qelim
 > import qualified Cooper
+> import qualified Complex()
 > import qualified Interpolation()
 > import qualified Combining
 

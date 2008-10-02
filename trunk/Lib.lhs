@@ -5,6 +5,7 @@ standard library.  Most mirror functions in Harrison's lib.ml
 > module Lib ( -- Misc
 >              time
 >            , pow
+>            , funpow
 >            , decreasing
 >              -- Lists
 >            , findApply
@@ -44,6 +45,11 @@ standard library.  Most mirror functions in Harrison's lib.ml
 
 > pow :: Int -> Int -> Int
 > pow x y = if y >= 0 then pow' x y 1 else error "negative power"
+
+> funpow :: Int -> (a -> a) -> a -> a
+> funpow n f x = if n < 0 then error "negative power" else funpow' n f x 
+>   where funpow' 0 _ x = x
+>         funpow' n f x = funpow (n-1) f (f x)
 
 For use with sort
 
