@@ -1,5 +1,10 @@
 
-> module Cooper ( isNumeral
+> module Cooper ( zero
+>               , one
+>               , isNumeral
+>               , numeral1
+>               , numeral2
+>               , destNumeral
 >               , integerQelim
 >               , naturalQelim
 >               )
@@ -8,6 +13,8 @@
 > import Prelude 
 > import qualified List
 > import qualified Char
+> import qualified Ratio
+> import Ratio ( (%) )
 > import qualified ListSet
 > import qualified Formulas as F
 > import Formulas(Formula(..), (/\), (\/), (==>), (<=>), Vars, Var, Sym)
@@ -23,7 +30,15 @@
 > one :: Term
 > one = fromInteger 1
 
-> destNumeral :: Term -> Integer
+> rati :: Rational -> Integer
+> rati x = if Ratio.denominator x == 1 
+>          then toInteger (Ratio.numerator x)
+>       else error ("not integral: " ++ show x)
+
+> irat :: Integer -> Rational
+> irat x = x % 1
+
+> destNumeral :: Term -> Rational
 > destNumeral (Fn ns []) = read ns
 > destNumeral t = error ("destNumeral: " ++ show t)
 
@@ -32,13 +47,13 @@
 >                      | otherwise = List.all Char.isDigit ns
 > isNumeral _ = False
 
-> numeral1 :: (Integer -> Integer) -> Term -> Term
-> numeral1 fn = fromInteger . fn . destNumeral
+> numeral1 :: (Rational -> Rational) -> Term -> Term
+> numeral1 fn = fromRational . fn . destNumeral
 
-> numeral2 :: (Integer -> Integer -> Integer) -> Term -> Term -> Term
-> numeral2 fn m n = fromInteger $ fn (destNumeral m) (destNumeral n)
+> numeral2 :: (Rational -> Rational -> Rational) -> Term -> Term -> Term
+> numeral2 fn m n = fromRational $ fn (destNumeral m) (destNumeral n)
 
-> linearCmul :: Integer -> Term -> Term
+> linearCmul :: Rational -> Term -> Term
 > linearCmul n tm = if n == 0 then zero else 
 >                   case tm of 
 >                     Fn "+" [Fn "*" [c, x], r] -> 
@@ -110,7 +125,7 @@
     
 > formlcm :: Term -> Formula Fol -> Integer
 > formlcm x (Atom(R _ [_, Fn "+" [Fn "*" [c, y], _]])) | y == x =
->   abs(destNumeral c)
+>   abs $ rati $ destNumeral c
 > formlcm x (Not(p)) = formlcm x p
 > formlcm x (And p q) = lcm (formlcm x p) (formlcm x q)
 > formlcm x (Or p q) = lcm (formlcm x p) (formlcm x q)   
@@ -120,10 +135,10 @@
 > adjustcoeff x l fm = 
 >  case fm of
 >    Atom(R p [d, Fn "+" [Fn "*" [c, y], z]]) | y == x ->
->      let m = l `div` destNumeral c 
->          n = if p == "<" then abs m else m 
+>      let m = l `div` (rati $ destNumeral c)
+>          n = if p == "<" then abs m else m
 >          xtm = fromInteger (m `div` n) * x in
->      Atom(R p [linearCmul (abs m) d, xtm + linearCmul n z])
+>      Atom(R p [linearCmul (toRational $ abs m) d, xtm + linearCmul (irat n) z])
 >    Not p -> Not(adjustcoeff x l p)
 >    And p q -> adjustcoeff x l p /\ adjustcoeff x l q
 >    Or p q -> adjustcoeff x l p \/ adjustcoeff x l q
@@ -152,7 +167,7 @@
 > divlcm x fm =
 >  case fm of
 >    Atom(R "divides" [d, Fn "+" [Fn "*" [_, y], _]]) | y == x ->
->      destNumeral d
+>      rati $ destNumeral d
 >    Not p -> divlcm x p
 >    And p q -> lcm (divlcm x p) (divlcm x q)
 >    Or p q -> lcm (divlcm x p) (divlcm x q)
@@ -210,7 +225,7 @@
 > evalc = F.onatoms
 >  (\at@(R p [s, t]) -> case List.lookup p operations of
 >                         Just op -> if isNumeral s && isNumeral t then 
->                                      if op (destNumeral s) (destNumeral t) then Top else Bot
+>                                      if op (rati $ destNumeral s) (rati $ destNumeral t) then Top else Bot
 >                                    else Atom at
 >                         Nothing -> Atom at)
 

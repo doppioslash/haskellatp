@@ -73,6 +73,9 @@ Relations R ::= Var() | Var ( TS ) | Var | T = T | T < T
 >   signum _ = error "Unimplemented" 
 >   fromInteger n = Fn (show n) []
 
+> instance Fractional Term where
+>   fromRational r = Fn (show r) []
+
 %%%%%%%%%%%%%%
 %%% Parsing
 
