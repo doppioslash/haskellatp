@@ -1,0 +1,1 @@
+Haskell port of Harrison's Handbook of Practical Logic and Automated Reasoning
